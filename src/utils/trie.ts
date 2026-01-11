@@ -1,9 +1,15 @@
 import { HTTP_METHODS } from "../enums/methods.enum";
 import { RouteHandler } from "../types/route-handler";
 
+interface DynamicChildren {
+    parameterName: string,
+    node: TrieNode,
+}
+
 class TrieNode {
     handlers: Map<HTTP_METHODS, RouteHandler[]> | null = null;
-    children: Map<string, TrieNode> | null = null;
+    staticChildren: Map<string, TrieNode> | null = null;
+    dynamicChildren: DynamicChildren | null = null;
 }
 
 class Trie {
@@ -13,24 +19,40 @@ class Trie {
         const segments = url.split("/").filter(segment => segment.length != 0)
         let currNode = this.root as TrieNode
 
-        console.log(segments)
-
         for (const segment of segments) {
+            const isDynamicSegment = segment.startsWith(":")
 
-            if (!currNode.children) {
-                currNode.children = new Map()
+            if (!isDynamicSegment) {
+
+                if (!currNode.staticChildren) {
+                    currNode.staticChildren = new Map()
+                }
+
+                if (!currNode.staticChildren.has(segment)) {
+                    currNode.staticChildren.set(segment, new TrieNode())
+                }
+
+                currNode = currNode.staticChildren.get(segment)!;
+            } else if (isDynamicSegment) {
+                if (!currNode.dynamicChildren?.parameterName) {
+                    currNode.dynamicChildren = {
+                        parameterName: segment.split(":")[1],
+                        node: new TrieNode()
+                    }
+                }
+
+                currNode = currNode.dynamicChildren.node!
             }
 
-            if (!currNode.children.has(segment)) {
-                currNode.children.set(segment, new TrieNode())
-            }
-
-            currNode = currNode.children.get(segment)!;
         }
+
 
         currNode.handlers = currNode.handlers || new Map();
         handlers = Array.isArray(handlers) ? handlers : [handlers]
-        currNode.handlers.set(method, handlers)
+
+        if (!currNode.handlers.get(method)) {
+            currNode.handlers.set(method, handlers)
+        }
 
     }
 }
@@ -40,8 +62,15 @@ const trie = new Trie()
 //trie.insert("//users/profile", HTTP_METHODS.GET, () => { })
 trie.insert("//users/profile", HTTP_METHODS.GET, [() => { }, () => { }])
 trie.insert("//users/", HTTP_METHODS.GET, () => { })
-trie.insert("//users/", HTTP_METHODS.POST, () => { })
-trie.insert("/", HTTP_METHODS.GET, () => { })
+trie.insert("//users", HTTP_METHODS.POST, () => { })
+// trie.insert("/", HTTP_METHODS.GET, () => { })
+trie.insert("/users/:id/profile/:userId", HTTP_METHODS.GET, () => { })
+trie.insert("/users/:id/profile/:userId", HTTP_METHODS.POST, () => { })
 
 console.dir(trie, { depth: null })
 
+
+export {
+    Trie,
+    TrieNode
+}
