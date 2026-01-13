@@ -16,7 +16,7 @@ class Trie {
     private root = new TrieNode();
 
     public insert(url: string, method: HTTP_METHODS, handlers: RouteHandler | RouteHandler[]) {
-        const segments = url.split("/").filter(segment => segment.length != 0)
+        const segments = this.normalizePath(url);
         let currNode = this.root as TrieNode
 
         for (const segment of segments) {
@@ -56,7 +56,7 @@ class Trie {
     }
 
     public find(url: string, method: HTTP_METHODS) {
-        const segments = url.split("/").filter((segment) => segment.length != 0)
+        const segments = this.normalizePath(url);
         const params: Record<string, any> = {};
 
         let currNode = this.root;
@@ -76,7 +76,12 @@ class Trie {
         }
 
         const handlers = currNode.handlers?.get(method);
+        if (!handlers) return null
         return { handlers, params }
+    }
+
+    public normalizePath(path: string) {
+        return path.split("/").filter(segment => segment.length > 0)
     }
 }
 
@@ -95,9 +100,11 @@ console.dir(trie, { depth: null })
 //console.log(trie.find("//users/profile", HTTP_METHODS.GET))
 console.log(trie.find("//users", HTTP_METHODS.GET))
 console.log(trie.find("//users", HTTP_METHODS.POST))
-console.log(trie.find("//users/12345/profile/6789", HTTP_METHODS.POST))
+console.log(trie.find("//users/12345", HTTP_METHODS.POST))
+
 
 export {
     Trie,
     TrieNode
 }
+
