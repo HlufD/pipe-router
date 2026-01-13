@@ -34,32 +34,38 @@ class Trie {
 
                 currNode = currNode.staticChildren.get(segment)!;
             } else if (isDynamicSegment) {
+                const parameterName = segment.split(":")[1]
+
+                if (currNode.dynamicChild?.parameterName && parameterName != currNode.dynamicChild?.parameterName) {
+                    throw new Error(`Conflicting param names :${currNode.dynamicChild?.parameterName} vs :${parameterName}`)
+                }
+
                 if (!currNode.dynamicChild?.parameterName) {
                     currNode.dynamicChild = {
-                        parameterName: segment.split(":")[1],
+                        parameterName: parameterName,
                         node: new TrieNode()
                     }
                 }
 
                 currNode = currNode.dynamicChild.node!
             }
-
         }
 
 
         currNode.handlers = currNode.handlers || new Map();
         handlers = Array.isArray(handlers) ? handlers : [handlers]
 
-        if (!currNode.handlers.get(method)) {
-            currNode.handlers.set(method, handlers)
-        }
+        const handlerStack = currNode.handlers.get(method)
+        handlers = handlerStack && handlerStack?.length != 0 ? [...handlerStack!, ...handlers] : handlers;
+
+        currNode.handlers.set(method, handlers)
     }
 
     public find(url: string, method: HTTP_METHODS) {
         const segments = this.normalizePath(url);
         const params: Record<string, any> = {};
-
         let currNode = this.root;
+
         for (const segment of segments) {
             if (currNode.staticChildren?.has(segment)) {
                 currNode = currNode.staticChildren.get(segment)!
@@ -83,24 +89,28 @@ class Trie {
     public normalizePath(path: string) {
         return path.split("/").filter(segment => segment.length > 0)
     }
+
 }
 
 
 const trie = new Trie()
 //trie.insert("//users/profile", HTTP_METHODS.GET, () => { })
-trie.insert("//users/profile", HTTP_METHODS.GET, [() => { }, () => { }])
-trie.insert("//users/", HTTP_METHODS.GET, () => { })
-trie.insert("//users", HTTP_METHODS.POST, () => { })
+// trie.insert("//users/profile", HTTP_METHODS.GET, [() => { }, () => { }])
+// trie.insert("//users/", HTTP_METHODS.GET, () => { })
+// trie.insert("//users", HTTP_METHODS.GET, () => { })
 // trie.insert("/", HTTP_METHODS.GET, () => { })
-trie.insert("/users/:id/profile/:userId", HTTP_METHODS.GET, () => { })
-trie.insert("/users/:id/profile/:userId", HTTP_METHODS.POST, () => { })
+// trie.insert("/users/:id/profile/:userId", HTTP_METHODS.GET, () => { })
+// trie.insert("/users/:id/profile/:userId", HTTP_METHODS.POST, () => { })
+
+trie.insert("/user/:id", HTTP_METHODS.GET, () => { })
+trie.insert("/user/:id", HTTP_METHODS.GET, () => { })
 
 console.dir(trie, { depth: null })
 
 //console.log(trie.find("//users/profile", HTTP_METHODS.GET))
-console.log(trie.find("//users", HTTP_METHODS.GET))
-console.log(trie.find("//users", HTTP_METHODS.POST))
-console.log(trie.find("//users/12345", HTTP_METHODS.POST))
+// console.log(trie.find("//users", HTTP_METHODS.GET))
+// console.log(trie.find("//users", HTTP_METHODS.POST))
+// console.log(trie.find("//users/12345", HTTP_METHODS.POST))
 
 
 export {
