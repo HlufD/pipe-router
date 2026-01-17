@@ -29,6 +29,10 @@ class Trie {
       throw new Error(`Optional parameters should be placed at the end`);
     }
 
+    if (segments.includes("*") && segments[segments.length - 1]) {
+      throw new Error(`Wildcard parameters should be placed at the end`);
+    }
+
     for (const segment of segments) {
       if (this.isDynamicSegment(segment)) {
         currNode = this.registerDynamicSegments(segment, currNode);
