@@ -2,105 +2,184 @@ import { HTTP_METHODS } from "../enums/methods.enum";
 import { RouteHandler } from "../types/route-handler";
 
 interface DynamicChild {
-    parameterName: string,
-    node: TrieNode,
+  parameterName: string;
+  node: TrieNode;
 }
 
 class TrieNode {
-    handlers: Map<HTTP_METHODS, RouteHandler[]> = new Map();
-    staticChildren: Map<string, TrieNode> = new Map()
-    dynamicChild: DynamicChild | null = null;
+  handlers: Map<HTTP_METHODS, RouteHandler[]> = new Map();
+  staticChildren: Map<string, TrieNode> = new Map();
+  dynamicChild: DynamicChild | null = null;
+  "*": TrieNode | null = null;
 }
 
 class Trie {
-    private root = new TrieNode();
+  private root = new TrieNode();
 
-    public register(url: string, method: HTTP_METHODS, handlers: RouteHandler | RouteHandler[]) {
-        const segments = this.normalizePath(url);
-        let currNode = this.root as TrieNode
+  public register(
+    url: string,
+    method: HTTP_METHODS,
+    handlers: RouteHandler | RouteHandler[]
+  ) {
+    const segments = this.normalizePath(url);
+    let currNode = this.root as TrieNode;
+    const hasOptionalParameter = this.hasOptionalParameter(url);
 
-        for (const segment of segments) {
-            currNode = this.isDynamicSegment(segment) ?
-                this.registerDynamicSegments(segment, currNode) :
-                this.registerStaticSegments(segment, currNode)
-        }
-
-        this.registerHandlers(method, handlers, currNode)
+    if (!this.hasOptionalParameter(url) && url.includes("?")) {
+      throw new Error(`Optional parameters should be placed at the end`);
     }
 
-    public match(url: string, method: HTTP_METHODS) {
-        const segments = this.normalizePath(url);
-        const params: Record<string, any> = {};
-        let currNode = this.root;
-
-        for (const segment of segments) {
-            if (currNode.staticChildren.has(segment)) {
-                currNode = currNode.staticChildren.get(segment)!
-                continue;
-            }
-
-            if (currNode.dynamicChild) {
-                params[currNode.dynamicChild.parameterName] = segment;
-                currNode = currNode.dynamicChild.node
-                continue;
-            }
-
-            return null
-        }
-
-        const handlers = currNode.handlers?.get(method);
-        if (!handlers) return null
-
-        return { handlers, params }
+    for (const segment of segments) {
+      if (this.isDynamicSegment(segment)) {
+        currNode = this.registerDynamicSegments(segment, currNode);
+      } else if (this.hasWildCard(segment)) {
+        currNode = this.registerWildCardSegment(segment, currNode);
+      } else {
+        currNode = this.registerStaticSegments(
+          segment,
+          currNode,
+          handlers,
+          hasOptionalParameter,
+          method,
+          segments
+        );
+      }
     }
 
+    this.registerHandlers(method, handlers, currNode, segments);
+  }
 
-    private registerStaticSegments(segment: string, currNode: TrieNode): TrieNode {
-        if (!currNode.staticChildren.has(segment)) {
-            currNode.staticChildren.set(segment, new TrieNode())
-        }
+  public match(url: string, method: HTTP_METHODS) {
+    const segments = this.normalizePath(url);
+    const params: Record<string, any> = {};
+    let currNode = this.root;
 
-        return currNode.staticChildren.get(segment) as TrieNode;
+    for (let i = 0; i < segments.length; i++) {
+      if (currNode.staticChildren.has(segments[i])) {
+        currNode = currNode.staticChildren.get(segments[i])!;
+        continue;
+      }
+
+      if (currNode.dynamicChild) {
+        params[currNode.dynamicChild.parameterName] = segments[i];
+        currNode = currNode.dynamicChild.node;
+        continue;
+      }
+
+      if (currNode["*"]) {
+        console.log(segments[i]);
+        params["*"] = segments.slice(i).join("/");
+        currNode = currNode["*"];
+        break;
+      }
+
+      return null;
     }
 
-    private registerDynamicSegments(segment: string, currNode: TrieNode): TrieNode {
-        const parameterName = this.getParameterName(segment);
+    const handlers = currNode.handlers?.get(method);
+    if (!handlers) return null;
 
-        if (currNode.dynamicChild?.parameterName && parameterName != currNode.dynamicChild?.parameterName) {
-            throw new Error(`Conflicting param names :${currNode.dynamicChild?.parameterName} vs :${parameterName}`)
-        }
+    return { handlers, params };
+  }
 
-        if (!currNode.dynamicChild?.parameterName) {
-            currNode.dynamicChild = {
-                parameterName: parameterName,
-                node: new TrieNode()
-            }
-        }
-
-        return currNode.dynamicChild.node
+  private registerStaticSegments(
+    segment: string,
+    currNode: TrieNode,
+    handlers: RouteHandler | RouteHandler[],
+    hasOptionalParameter: boolean,
+    method: HTTP_METHODS,
+    segments: string[]
+  ): TrieNode {
+    if (!currNode.staticChildren.has(segment)) {
+      currNode.staticChildren.set(segment, new TrieNode());
     }
 
-    private registerHandlers(method: HTTP_METHODS, handlers: RouteHandler | RouteHandler[], currNode: TrieNode) {
-        handlers = Array.isArray(handlers) ? handlers : [handlers]
+    currNode = currNode.staticChildren.get(segment) as TrieNode;
 
-        const handlerStack = currNode.handlers.get(method) || []
-        handlers = handlerStack.length != 0 ? [...handlerStack, ...handlers] : handlers;
-
-        currNode.handlers.set(method, handlers)
+    if (hasOptionalParameter) {
+      this.registerHandlers(method, handlers, currNode, segments);
     }
 
-    private normalizePath(path: string) {
-        return path.split("/").filter(segment => segment.length > 0)
+    return currNode;
+  }
+
+  private registerDynamicSegments(
+    segment: string,
+    currNode: TrieNode
+  ): TrieNode {
+    const parameterName = this.getParameterName(segment);
+
+    if (
+      currNode.dynamicChild?.parameterName &&
+      parameterName != currNode.dynamicChild?.parameterName
+    ) {
+      throw new Error(
+        `Conflicting param names :${currNode.dynamicChild?.parameterName} vs :${parameterName}`
+      );
     }
 
-    private getParameterName(segment: string) {
-        return segment.slice(1)
+    if (!currNode.dynamicChild?.parameterName) {
+      currNode.dynamicChild = {
+        parameterName: parameterName,
+        node: new TrieNode(),
+      };
     }
 
-    private isDynamicSegment(segment: string): boolean {
-        return segment.startsWith(":")
+    return currNode.dynamicChild.node;
+  }
+
+  private registerHandlers(
+    method: HTTP_METHODS,
+    handlers: RouteHandler | RouteHandler[],
+    currNode: TrieNode,
+    segments: string[]
+  ) {
+    handlers = Array.isArray(handlers) ? handlers : [handlers];
+
+    const handlerStack = currNode.handlers.get(method) || [];
+
+    if (handlerStack.length)
+      throw new Error(
+        `Conflict error: /${segments.join(
+          "/"
+        )} route has already been registered.`
+      );
+
+    currNode.handlers.set(method, handlers);
+  }
+
+  private registerWildCardSegment(segment: string, currNode: TrieNode) {
+    if (!currNode["*"]) {
+      currNode["*"] = new TrieNode();
     }
 
+    currNode = currNode["*"];
+    return currNode;
+  }
+
+  private normalizePath(path: string) {
+    return path.split("/").filter((segment) => segment.length > 0);
+  }
+
+  private getParameterName(segment: string) {
+    const parameterName = this.hasOptionalParameter(segment)
+      ? segment.slice(1, segment.length - 1)
+      : segment.slice(1);
+
+    return parameterName;
+  }
+
+  private isDynamicSegment(segment: string): boolean {
+    return segment.startsWith(":");
+  }
+
+  private hasOptionalParameter(segment: string) {
+    return segment.endsWith("?");
+  }
+
+  private hasWildCard(segment: string) {
+    return segment.endsWith("*");
+  }
 }
 
 
@@ -129,9 +208,4 @@ class Trie {
 // /user/:id/*
 // user/:id?
 
-
-export {
-    Trie,
-    TrieNode
-}
-
+export { Trie, TrieNode };
