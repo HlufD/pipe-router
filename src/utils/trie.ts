@@ -72,7 +72,6 @@ class Trie {
       }
 
       if (currNode["*"]) {
-        console.log(segments[i]);
         params["*"] = segments.slice(i).join("/");
         currNode = currNode["*"];
         break;
@@ -190,32 +189,75 @@ class Trie {
 
 const router = new Trie();
 
-// router.register("/users/*", HTTP_METHODS.GET, () => {
-//   console.log("from /users/*");
-// });
-// router.register("/users/:id/*", HTTP_METHODS.GET, () => {
-//   console.log("from /users/:id/*");
-// });
-// router.register("/users/:id/profile", HTTP_METHODS.GET, () => {
-//   console.log("from /users/:id/profile");
-// });
-// router.register("/users/:id/settings/*", HTTP_METHODS.GET, () => {
-//   console.log("from /users/:id/settings/*");
-// });
-// router.register("/users/:id/settings/privacy", HTTP_METHODS.GET, () => {
-//   console.log("from /users/:id/settings/privacy");
-// });
-// router.register("/users/:id/friends/:friendId/*", HTTP_METHODS.GET, () => {
-//   console.log("from /users/:id/friends/:friendId/*");
-// });
-// router.register(
-//   "/users/:id/friends/:friendId/details",
-//   HTTP_METHODS.GET,
-//   () => {
-//     console.log("from /users/:id/friends/:friendId/details");
-//   },
-// );
+router.register("/users/*", HTTP_METHODS.GET, () => {
+  console.log("from /users/*");
+});
+
+router.register("/users/:id/*", HTTP_METHODS.GET, () => {
+  console.log("from /users/:id/*");
+});
+
+router.register("/users/:id/profile", HTTP_METHODS.GET, () => {
+  console.log("from /users/:id/profile");
+});
+router.register("/users/:id/settings/*", HTTP_METHODS.GET, () => {
+  console.log("from /users/:id/settings/*");
+});
+router.register("/users/:id/settings/privacy", HTTP_METHODS.GET, () => {
+  console.log("from /users/:id/settings/privacy");
+});
+router.register("/users/:id/friends/:friendId/*", HTTP_METHODS.GET, () => {
+  console.log("from /users/:id/friends/:friendId/*");
+});
+router.register(
+  "/users/:id/friends/:friendId/details",
+  HTTP_METHODS.GET,
+  () => {
+    console.log("from /users/:id/friends/:friendId/details");
+  },
+);
 
 console.dir(router, { depth: null });
+
+const a: any = "a";
+console.log("==== Test 1 ====");
+router.match("/users/foo", HTTP_METHODS.GET)?.handlers[0](a, a);
+
+console.log("==== Test 2 ====");
+router.match("/users/foo/some", HTTP_METHODS.GET)?.handlers[0](a, a);
+
+console.log("==== Test 3 ====");
+router.match("/users/foo/profile", HTTP_METHODS.GET)?.handlers[0](a, a);
+
+console.log("==== Test 4 ====");
+router.match("/users/foo/settings", HTTP_METHODS.GET)?.handlers[0](a, a);
+
+console.log("==== Test 5 ====");
+router
+  .match("/users/foo/settings/privacy", HTTP_METHODS.GET)
+  ?.handlers[0](a, a);
+
+console.log("==== Test 6 ====");
+router.match("/users/foo/friends/bar", HTTP_METHODS.GET)?.handlers[0](a, a);
+
+console.log("==== Test 7 ====");
+router
+  .match("/users/foo/friends/bar/details", HTTP_METHODS.GET)
+  ?.handlers[0](a, a);
+
+console.log("==== Test 8 ====");
+router.match("/users/unknown/extra/path", HTTP_METHODS.GET)?.handlers[0](a, a);
+
+/* Fastify
+1 → from /users/*
+2 → from /users/:id/*
+3 → from /users/:id/profile
+4 → from /users/:id/*
+5 → from /users/:id/settings/privacy
+6 → from /users/:id/*
+7 → from /users/:id/friends/:friendId/details
+8 → from /users/:id/*
+
+*/
 
 export { Trie, TrieNode };
