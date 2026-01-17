@@ -182,30 +182,4 @@ class Trie {
   }
 }
 
-
-// const trie = new Trie()
-// trie.register("//users/profile", HTTP_METHODS.GET, () => { })
-// trie.register("/users/profile", HTTP_METHODS.POST, [() => { }, () => { }])
-// // trie.register("//users/", HTTP_METHODS.GET, () => { })
-// // trie.register("//users", HTTP_METHODS.GET, () => { })
-// // trie.register("/", HTTP_METHODS.GET, () => { })
-// trie.register("/users/:id/profile/:profileId", HTTP_METHODS.GET, () => { })
-// // trie.register("/users/:id/profile/:userId", HTTP_METHODS.POST, () => { })
-
-// // trie.register("/users/:id", HTTP_METHODS.GET, () => { })
-// // trie.register("/users/:id", HTTP_METHODS.POST, () => { })
-
-// trie.register("/", HTTP_METHODS.GET, () => { })
-
-// console.dir(trie, { depth: null })
-
-// console.log(trie.match("//users/profile", HTTP_METHODS.GET))
-// // console.log(trie.match("//users", HTTP_METHODS.GET))
-// // console.log(trie.match("//users", HTTP_METHODS.POST))
-// console.log(trie.match("//users/12345/profile/6789", HTTP_METHODS.POST))
-
-// // wild card
-// /user/:id/*
-// user/:id?
-
 export { Trie, TrieNode };
