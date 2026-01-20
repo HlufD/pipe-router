@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { HTTP_METHODS } from "../src/enums/methods.enum";
-import { Trie } from "../src/utils/trie";
+import { Trie } from "../src/core/trie";
 
 describe("Trie Router with req/res", () => {
   let router: Trie;
