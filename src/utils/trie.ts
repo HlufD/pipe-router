@@ -195,4 +195,16 @@ class Trie {
   }
 }
 
+const router = new Trie();
+
+router.register("/users/*", HTTP_METHODS.GET, () => {
+  console.log("from -> /users/*");
+});
+
+router.register("/users/:id/*", HTTP_METHODS.GET, () => {
+  console.log("from -> /users/:id/*");
+});
+
+console.dir(router, { depth: null });
+
 export { Trie, TrieNode };
