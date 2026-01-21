@@ -65,8 +65,6 @@ class Trie {
       params: Record<string, string>;
     } | null = null;
 
-    let wildcardHandle: TrieNode | null = null;
-
     for (let i = 0; i < segments.length; i++) {
       if (currNode.staticChildren.has(segments[i])) {
         if (currNode["*"]) {
@@ -219,5 +217,26 @@ class Trie {
     return segment.endsWith("*");
   }
 }
+
+const router = new Trie();
+
+router.register("/users/*", HTTP_METHODS.GET, () => {
+  console.log("from /users/*");
+});
+
+router.register("/users/:id/*", HTTP_METHODS.GET, () => {
+  console.log("from /users/:id/*");
+});
+
+router.register("/users/:id/:user/*", HTTP_METHODS.GET, () => {
+  console.log("from /users/:id/:user/*");
+});
+
+console.dir(router, { depth: null });
+
+let a: any = "a";
+const result = router.match("/users/some/hjjhh", HTTP_METHODS.GET);
+console.log(result);
+result?.handlers[0](a, a);
 
 export { Trie, TrieNode };
