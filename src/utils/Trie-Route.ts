@@ -92,11 +92,14 @@ class RouteNode {
 
   private normalizeUrl(url: string) {
     if (this.config.ignoreDuplicateSlashes) {
-      return url.split("/").filter(Boolean);
-    } else {
-      url = url.replace(/\/+$/, "");
-      return url.split("/");
+      url = url.replace(/\/+/g, "/");
     }
+
+    if (this.config.ignoreTrailingSlash) {
+      url = url.replace(/\/$/, "");
+    }
+
+    return this.splitPath(url);
   }
 
   private identifySegmentType(segment: string): SEGMENT_TYPE {
@@ -134,16 +137,22 @@ class RouteNode {
   private getParamName(segment: string) {
     return segment.split(":")[1];
   }
+
+  private splitPath(url: string) {
+    if (url === "/") return [""];
+    const segments = url.match(/[^/]+|(?<=\/$)/g) || [];
+    return segments;
+  }
 }
 
 const router = new RouteNode({
-  ignoreDuplicateSlashes: false,
-  ignoreTrailingSlash: false,
+  ignoreDuplicateSlashes: true,
+  ignoreTrailingSlash: true,
 });
 
-router.on("/", HTTP_METHODS.GET, [() => {}]);
-// router.on("//users//some", HTTP_METHODS.GET, () => {});
-//router.on("/users/some", HTTP_METHODS.GET, () => {});
+router.on("/users//", HTTP_METHODS.GET, [() => {}]);
+// router.on("/users", HTTP_METHODS.GET, [() => {}]);
+// router.on("/users/", HTTP_METHODS.GET, [() => {}]);
 // router.on("/:id", HTTP_METHODS.GET, [() => {}]);
 // router.on("/*", HTTP_METHODS.GET, [() => {}]);
 
