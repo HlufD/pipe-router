@@ -40,7 +40,7 @@ class RouteNode {
     this.config = config;
   }
 
-  on(url: string, method: HTTP_METHODS, handlers: RouteHandler[]) {
+  register(url: string, method: HTTP_METHODS, handlers: RouteHandler[]) {
     let currNode = this.root;
     const segments = this.normalizeUrl(url);
 
@@ -102,7 +102,7 @@ class RouteNode {
     return currNode;
   }
 
-  private registerWildcardSegment(segment: string, currNode: Node): Node {
+  private registerWildcardSegment(_: string, currNode: Node): Node {
     if (!currNode.wildCardNode) currNode.wildCardNode = new Node();
     currNode = currNode.wildCardNode;
     return currNode;
@@ -180,30 +180,4 @@ class RouteNode {
   }
 }
 
-const router = new RouteNode({
-  ignoreDuplicateSlashes: true,
-  ignoreTrailingSlash: true,
-});
-
-//router.on("/users//", HTTP_METHODS.GET, [() => {}]);
-// router.on("/users//", HTTP_METHODS.GET, [() => {}]);
-// router.on("/users", HTTP_METHODS.GET, [() => {}]);
-// router.on("/users/", HTTP_METHODS.GET, [() => {}]);
-
-//router.on("/:id", HTTP_METHODS.GET, [() => {}]);
-// router.on("/:userId", HTTP_METHODS.GET, [() => {}]);
-// router.on("/:id/:usersId", HTTP_METHODS.GET, [() => {}]);
-
-// router.on("/*", HTTP_METHODS.GET, [() => {}]);
-// router.on("/users/*", HTTP_METHODS.GET, [() => {}]);
-
-// optional params
-// router.on("/users/:id?", HTTP_METHODS.GET, [() => {}]);
-// router.on("/users/*", HTTP_METHODS.GET, [() => {}]);
-
-// conflict detection
-
-router.on("/users/:id/*", HTTP_METHODS.GET, [() => {}]);
-router.on("/users/:userId", HTTP_METHODS.GET, [() => {}]);
-
-console.dir(router, { depth: null });
+export { RouteNode, Node, SEGMENT_TYPE, Options };
