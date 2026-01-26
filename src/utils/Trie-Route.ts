@@ -92,18 +92,19 @@ class RouteNode {
       const segment = segments[i];
       if (currentNode.staticNodes.has(segment)) {
         if (currentNode.wildCardNode)
-          wildcardState ??= this.saveWildcardState(currentNode, i, params);
-
+          wildcardState = this.saveWildcardState(currentNode, i, params);
         const staticChild = currentNode.staticNodes.get(segment)!;
         currentNode = staticChild;
       } else if (currentNode.parametricNode) {
         if (currentNode.wildCardNode)
-          wildcardState ??= this.saveWildcardState(currentNode, i, params);
+          wildcardState = this.saveWildcardState(currentNode, i, params);
 
         const parametricChild = currentNode.parametricNode;
         params[parametricChild.parameter!] = segment;
         currentNode = parametricChild;
-      } else {
+      } else if (currentNode.wildCardNode) {
+        wildcardState = this.saveWildcardState(currentNode, i, params);
+        const finalWildcard = wildcardState;
         break;
       }
     }
@@ -176,11 +177,9 @@ class RouteNode {
     node: Node,
     index: number,
     params: Record<string, any>,
-  ) {
-    if (!node.wildCardNode) return null;
-
+  ): WildcardState {
     return {
-      node: node.wildCardNode,
+      node: node.wildCardNode!,
       index,
       params: { ...params },
     };
