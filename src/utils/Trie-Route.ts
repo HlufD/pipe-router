@@ -13,6 +13,12 @@ interface Options {
   ignoreTrailingSlash?: boolean;
 }
 
+interface WildcardSate {
+  node: Node;
+  index: number;
+  params: Record<string, any>;
+}
+
 class Node {
   public handlers: Map<HTTP_METHODS, RouteHandler[]>;
   public staticNodes: Map<string, Node>;
@@ -80,6 +86,49 @@ class RouteNode {
     const segments = this.normalizeUrl(url);
     let currentNode = this.root;
     let params: Record<string, any> = {};
+    let wildcardState: WildcardSate | null = null;
+
+    for (let i = 0; i < segments.length; i++) {
+      const segment = segments[i];
+      if (currentNode.staticNodes.has(segment)) {
+        if (currentNode.wildCardNode)
+          wildcardState = {
+            node: currentNode.wildCardNode,
+            index: i,
+            params: { ...params },
+          };
+
+        const staticChild = currentNode.staticNodes.get(segment)!;
+        currentNode = staticChild;
+        continue;
+      }
+
+      if (currentNode.parametricNode) {
+        if (currentNode.wildCardNode)
+          wildcardState = {
+            node: currentNode.wildCardNode,
+            index: i,
+            params: { ...params },
+          };
+
+        const parametricChild = currentNode.parametricNode;
+        params[parametricChild.parameter!] = segment;
+        currentNode = parametricChild;
+      }
+    }
+
+    let handlers = currentNode.handlers.get(method);
+
+    if (!handlers && wildcardState) {
+      const { node: wildCardNode, index, ...rest } = wildcardState;
+      handlers = wildCardNode.handlers.get(method);
+      params = { ...rest };
+      params["*"] = segments.slice(wildcardState.index).join();
+    }
+
+    if (!handlers) return null;
+
+    return { handlers, params };
   }
 
   private registerStaticNode(segment: string, currentNode: Node): Node {
