@@ -268,3 +268,214 @@ describe("Advanced edge cases", () => {
     }).toThrow("Duplicate routes at: /");
   });
 });
+
+describe("Matching – static routes", () => {
+  it("matches deep static path", () => {
+    router.register("/users/profile/settings", HTTP_METHODS.GET, [() => {}]);
+
+    const result = router.match("/users/profile/settings", HTTP_METHODS.GET);
+
+    expect(result).not.toBeNull();
+    expect(result!.params).toEqual({});
+  });
+
+  it("fails when static path partially matches", () => {
+    router.register("/users/profile", HTTP_METHODS.GET, [() => {}]);
+
+    const result = router.match("/users/profile/settings", HTTP_METHODS.GET);
+
+    expect(result).toBeNull();
+  });
+
+  it("static match is case-sensitive", () => {
+    router.register("/Users", HTTP_METHODS.GET, [() => {}]);
+
+    expect(router.match("/users", HTTP_METHODS.GET)).toBeNull();
+  });
+});
+
+describe("Matching – param extraction", () => {
+  it("extracts numeric param as string", () => {
+    router.register("/items/:id", HTTP_METHODS.GET, [() => {}]);
+
+    const result = router.match("/items/123", HTTP_METHODS.GET);
+
+    expect(result!.params).toEqual({ id: "123" });
+  });
+
+  it("extracts dash-containing param", () => {
+    router.register("/items/:slug", HTTP_METHODS.GET, [() => {}]);
+
+    const result = router.match("/items/my-item-42", HTTP_METHODS.GET);
+
+    expect(result!.params).toEqual({ slug: "my-item-42" });
+  });
+
+  it("fails when param segment is missing", () => {
+    router.register("/items/:id", HTTP_METHODS.GET, [() => {}]);
+
+    expect(router.match("/items", HTTP_METHODS.GET)).toBeNull();
+  });
+});
+
+describe("Matching – optional params", () => {
+  it("matches optional param at end (missing)", () => {
+    router.register("/users/:id?", HTTP_METHODS.GET, [() => {}]);
+
+    const result = router.match("/users", HTTP_METHODS.GET);
+
+    expect(result).not.toBeNull();
+    expect(result!.params).toEqual({});
+  });
+
+  it("matches optional param at end (present)", () => {
+    router.register("/users/:id?", HTTP_METHODS.GET, [() => {}]);
+
+    const result = router.match("/users/88", HTTP_METHODS.GET);
+
+    expect(result!.params).toEqual({ id: "88" });
+  });
+});
+
+describe("Matching – wildcard capture", () => {
+  it("captures multiple segments", () => {
+    router.register("/files/*", HTTP_METHODS.GET, [() => {}]);
+
+    const result = router.match("/files/a/b/c/d", HTTP_METHODS.GET);
+
+    expect(result!.params).toEqual({ "*": "a/b/c/d" });
+  });
+
+  it("captures single segment", () => {
+    router.register("/files/*", HTTP_METHODS.GET, [() => {}]);
+
+    const result = router.match("/files/readme", HTTP_METHODS.GET);
+
+    expect(result!.params).toEqual({ "*": "readme" });
+  });
+
+  it("captures empty wildcard at root child", () => {
+    router.register("/*", HTTP_METHODS.GET, [() => {}]);
+
+    const result = router.match("/", HTTP_METHODS.GET);
+
+    expect(result!.params).toEqual({ "*": "" });
+  });
+});
+
+describe("Matching – wildcard fallback", () => {
+  it("falls back when static path breaks later", () => {
+    router.register("/users/*", HTTP_METHODS.GET, [() => {}]);
+    router.register("/users/profile", HTTP_METHODS.GET, [() => {}]);
+
+    const result = router.match("/users/unknown/path", HTTP_METHODS.GET);
+
+    expect(result).not.toBeNull();
+    expect(result!.params["*"]).toBe("unknown/path");
+  });
+
+  it("uses deepest wildcard state", () => {
+    router.register("/a/*", HTTP_METHODS.GET, [() => {}]);
+    router.register("/a/b/*", HTTP_METHODS.GET, [() => {}]);
+
+    const result = router.match("/a/b/c/d", HTTP_METHODS.GET);
+
+    expect(result!.params["*"]).toBe("c/d");
+  });
+});
+
+describe("Matching – normalization", () => {
+  it("normalizes duplicate slashes", () => {
+    router.register("/users/:id/details", HTTP_METHODS.GET, [() => {}]);
+
+    const result = router.match("//users//99//details", HTTP_METHODS.GET);
+
+    expect(result!.params).toEqual({ id: "99" });
+  });
+
+  it("normalizes trailing slash", () => {
+    router.register("/users", HTTP_METHODS.GET, [() => {}]);
+
+    expect(router.match("/users/", HTTP_METHODS.GET)).not.toBeNull();
+  });
+
+  it("normalizes wildcard paths", () => {
+    router.register("/files/*", HTTP_METHODS.GET, [() => {}]);
+
+    const result = router.match("/files//a///b/", HTTP_METHODS.GET);
+
+    expect(result!.params["*"]).toBe("a/b");
+  });
+});
+
+describe("Matching – precedence", () => {
+  it("static beats param", () => {
+    const staticH = () => {};
+    const paramH = () => {};
+
+    router.register("/users/me", HTTP_METHODS.GET, [staticH]);
+    router.register("/users/:id", HTTP_METHODS.GET, [paramH]);
+
+    expect(router.match("/users/me", HTTP_METHODS.GET)!.handlers[0]).toBe(
+      staticH,
+    );
+  });
+
+  it("param beats wildcard", () => {
+    const paramH = () => {};
+    const wildH = () => {};
+
+    router.register("/users/:id", HTTP_METHODS.GET, [paramH]);
+    router.register("/users/*", HTTP_METHODS.GET, [wildH]);
+
+    expect(router.match("/users/7", HTTP_METHODS.GET)!.handlers[0]).toBe(
+      paramH,
+    );
+  });
+
+  it("static beats wildcard", () => {
+    const staticH = () => {};
+    const wildH = () => {};
+
+    router.register("/users/settings", HTTP_METHODS.GET, [staticH]);
+    router.register("/users/*", HTTP_METHODS.GET, [wildH]);
+
+    expect(router.match("/users/settings", HTTP_METHODS.GET)!.handlers[0]).toBe(
+      staticH,
+    );
+  });
+});
+
+describe("Matching – root", () => {
+  it("matches root '/'", () => {
+    router.register("/", HTTP_METHODS.GET, [() => {}]);
+
+    expect(router.match("/", HTTP_METHODS.GET)).not.toBeNull();
+  });
+
+  it("does not match root for deeper path", () => {
+    router.register("/", HTTP_METHODS.GET, [() => {}]);
+
+    expect(router.match("/users", HTTP_METHODS.GET)).toBeNull();
+  });
+});
+
+describe("Matching – negative cases", () => {
+  it("returns null when path exists but method does not", () => {
+    router.register("/users", HTTP_METHODS.POST, [() => {}]);
+
+    expect(router.match("/users", HTTP_METHODS.GET)).toBeNull();
+  });
+
+  it("returns null when path partially matches", () => {
+    router.register("/users/:id/details", HTTP_METHODS.GET, [() => {}]);
+
+    expect(router.match("/users/1", HTTP_METHODS.GET)).toBeNull();
+  });
+
+  it("returns null when only wildcard child exists but no handlers", () => {
+    router.register("/users/*", HTTP_METHODS.POST, [() => {}]);
+
+    expect(router.match("/users/anything", HTTP_METHODS.GET)).toBeNull();
+  });
+});

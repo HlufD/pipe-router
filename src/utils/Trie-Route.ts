@@ -87,29 +87,37 @@ class RouteNode {
     let currentNode = this.root;
     let params: Record<string, any> = {};
     let wildcardState: WildcardState | null = null;
+    let fullyMatched = true;
 
-    for (let i = 0; i < segments.length; i++) {
-      const segment = segments[i];
-      if (currentNode.staticNodes.has(segment)) {
-        if (currentNode.wildCardNode)
+    if (segments.length === 0 && currentNode.wildCardNode) {
+      wildcardState = this.saveWildcardState(currentNode, 0, params);
+    } else {
+      for (let i = 0; i < segments.length; i++) {
+        const segment = segments[i];
+        if (currentNode.staticNodes.has(segment)) {
+          if (currentNode.wildCardNode)
+            wildcardState = this.saveWildcardState(currentNode, i, params);
+
+          const staticChild = currentNode.staticNodes.get(segment)!;
+          currentNode = staticChild;
+        } else if (currentNode.parametricNode) {
+          if (currentNode.wildCardNode)
+            wildcardState = this.saveWildcardState(currentNode, i, params);
+
+          const parametricChild = currentNode.parametricNode;
+          params[parametricChild.parameter!] = segment;
+          currentNode = parametricChild;
+        } else if (currentNode.wildCardNode) {
           wildcardState = this.saveWildcardState(currentNode, i, params);
-
-        const staticChild = currentNode.staticNodes.get(segment)!;
-        currentNode = staticChild;
-      } else if (currentNode.parametricNode) {
-        if (currentNode.wildCardNode)
-          wildcardState = this.saveWildcardState(currentNode, i, params);
-
-        const parametricChild = currentNode.parametricNode;
-        params[parametricChild.parameter!] = segment;
-        currentNode = parametricChild;
-      } else if (currentNode.wildCardNode) {
-        wildcardState = this.saveWildcardState(currentNode, i, params);
-        break;
+          break;
+        } else {
+          fullyMatched = false;
+          break;
+        }
       }
     }
 
-    let handlers = currentNode.handlers.get(method);
+    let handlers = fullyMatched ? currentNode.handlers.get(method) : null;
 
     if (!handlers && wildcardState) {
       const { node: wildCardNode, index, params: parameters } = wildcardState;
