@@ -1,8 +1,10 @@
 import { Request } from "./request";
 import { Response } from "./response";
 
-type RouteHandler = (
+type NextFunction = () => void;
+
+type Middleware = (
   req: Request,
   res: Response,
-  next?: () => any,
-) => void | Promise<void> | any;
+  next: NextFunction,
+) => void | Promise<void>;
