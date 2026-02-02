@@ -3,6 +3,11 @@ import { HTTP_METHODS } from "../enums/methods.enum";
 import { RouteHandler } from "../types/route-handler";
 import { RouteDefinition, Router } from "../types/router";
 
+interface Layer {
+  prefix: string;
+  routes: RouteDefinition[];
+}
+
 class RouterBuilder {
   constructor(
     private path: string,
@@ -59,6 +64,7 @@ class RouterBuilder {
 
 export class PipeRouter implements Router {
   private readonly routes: RouteDefinition[] = [];
+  private readonly layers: Layer[] = [];
 
   public get(path: string, ...handlers: RouteHandler[]): void {
     this.routes.push({ handlers, path, method: HTTP_METHODS.GET });
@@ -81,10 +87,7 @@ export class PipeRouter implements Router {
   }
 
   public use(prefix: string, router: PipeRouter): void {
-    const { routes } = router;
-    for (let i = 0; i < routes.length; i++) {
-      routes[i].path = prefix + routes[i].path;
-    }
+    this.layers.push({ prefix, routes: router.routes });
   }
   public route(path: string) {
     return new RouterBuilder(path, this);

@@ -1,18 +1,19 @@
-// // import { PipeRouter } from "./core/router";
-
 // import { PipeRouter } from "./core/router";
 
-// const router = new PipeRouter();
+import { PipeRouter } from "./core/router";
 
-// router.get("/users", () => {
-//   console.log("/users");
-// });
+const router = new PipeRouter();
 
-// router.get("/users/:id", () => {
-//   console.log("/users/:id");
-// });
+router.get("/users", () => {
+  console.log("/users");
+});
 
-// router.use("/api/v1", router);
+router.get("/users/:id", () => {
+  console.log("/users/:id");
+});
+
+router.use("/api/v1", router);
+router.use("/api/v2", router);
 
 // router
 //   .route("/some/:id")
@@ -20,4 +21,4 @@
 //   .delete(() => {})
 //   .patch(() => {});
 
-// console.log(router);
+console.dir(router, { depth: null });
