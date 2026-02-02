@@ -96,4 +96,26 @@ export class PipeRouter implements Router {
   public addRoutes(route: RouteDefinition) {
     this.routes.push(route);
   }
+
+  public collectRoutes(router: PipeRouter) {
+    const routes: RouteDefinition[] = [];
+
+    const { routes: originalRoutes, layers } = router;
+
+    routes.push(...originalRoutes);
+
+    for (let i = 0; i < layers.length; i++) {
+      const { prefix, routes: layerRoutes } = layers[i];
+      for (let j = 0; j < layerRoutes.length; j++) {
+        const path = `${prefix.trimEnd()}${layerRoutes[j].path}`;
+        console.log(path.trim());
+        routes.push({
+          ...layerRoutes[j],
+          path,
+        });
+      }
+    }
+
+    return routes;
+  }
 }
