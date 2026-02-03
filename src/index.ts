@@ -1,5 +1,3 @@
-// import { PipeRouter } from "./core/router";
-
 import { PipeRouter } from "./core/router";
 
 const router = new PipeRouter();
@@ -15,12 +13,12 @@ router.get("/users/:id", () => {
 router.use("/api/v1", router);
 router.use("/api/v2", router);
 
-// router
-//   .route("/some/:id")
-//   .get(() => {})
-//   .delete(() => {})
-//   .patch(() => {});
+router
+  .route("/some/:id")
+  .get(() => {})
+  .delete(() => {})
+  .patch(() => {});
 
-// console.dir(router, { depth: null });
+console.dir(router, { depth: null });
 
 console.log(router.collectRoutes(router));
