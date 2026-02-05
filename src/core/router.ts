@@ -87,6 +87,10 @@ export class PipeRouter implements Router {
   }
 
   public use(prefix: string, router: PipeRouter): void {
+    if (router === this) {
+      throw new Error("Cannot use the same router as a sub-router.");
+    }
+
     this.layers.push({ prefix, routes: router.routes });
   }
   public route(path: string) {
@@ -98,24 +102,22 @@ export class PipeRouter implements Router {
   }
 
   public collectRoutes(router: PipeRouter) {
-    const routes: RouteDefinition[] = [];
+    const { routes, layers } = router;
 
-    const { routes: originalRoutes, layers } = router;
+    const collectedRoutes: RouteDefinition[] = [...routes];
 
-    routes.push(...originalRoutes);
+    for (const layer of layers) {
+      const prefix = layer.prefix;
+      const subRoutes = layer.routes;
 
-    for (let i = 0; i < layers.length; i++) {
-      const { prefix, routes: layerRoutes } = layers[i];
-      for (let j = 0; j < layerRoutes.length; j++) {
-        const path = `${prefix.trimEnd()}${layerRoutes[j].path}`;
-        console.log(path.trim());
-        routes.push({
-          ...layerRoutes[j],
-          path,
+      for (const subRoute of subRoutes) {
+        collectedRoutes.push({
+          ...subRoute,
+          path: `${prefix}${subRoute.path}`,
         });
       }
     }
 
-    return routes;
+    return collectedRoutes;
   }
 }
