@@ -1,17 +1,22 @@
-// import { PipeRouter } from "./core/router";
+import { PipeRouter } from "./core/router";
 
-// const router = new PipeRouter();
+const router = new PipeRouter();
+const router2 = new PipeRouter();
 
-// router.get("/users", () => {
-//   console.log("/users");
-// });
+router.get("/users", () => {
+  console.log("/users");
+});
 
-// router.get("/users/:id", () => {
-//   console.log("/users/:id");
-// });
+router.get("/users/:id", () => {
+  console.log("/users/:id");
+});
 
-// router.use("/api/v1", router);
-// router.use("/api/v2", router);
+router2.use("/api/v1", router);
+router2.use("/api/v2", router);
+
+router.get("/users/:id/*", () => {
+  console.log("/users/:id");
+});
 
 // router
 //   .route("/some/:id")
@@ -20,5 +25,8 @@
 //   .patch(() => {});
 
 // console.dir(router, { depth: null });
+// console.log("-----------------------------");
+// console.dir(router2, { depth: null });
 
-// console.log(router.collectRoutes(router));
+console.log(router2.collectRoutes(router2));
+console.log(router2.collectRoutes(router));
