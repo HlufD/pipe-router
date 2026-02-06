@@ -3,13 +3,16 @@ import { HTTP_METHODS } from "../enums/methods.enum";
 import { RouteHandler } from "../types/route-handler";
 import { RouteNode } from "../utils/Trie-Route";
 import { PipeRouter } from "./router";
-import { Request } from "../types/request";
-import { Response } from "../types/response";
+import { Request } from "./request";
+import { Response } from "./response";
 
 export class PipeServer {
   routes: RouteNode;
   constructor() {
-    this.routes = new RouteNode({});
+    this.routes = new RouteNode({
+      ignoreDuplicateSlashes: true,
+      ignoreTrailingSlash: true,
+    });
   }
 
   public listen(port: number, callback?: () => void) {
@@ -26,12 +29,12 @@ export class PipeServer {
     const request = new Request(rawRequest);
     const response = new Response(rawResponse);
 
-    const method = rawRequest.method as HTTP_METHODS;
-    const url = rawRequest.url || "/";
-    const route = this.routes.match(url, method);
+    const method = request.method;
+    const url = request.url;
+    const route = this.routes.match(url, method.toLowerCase() as HTTP_METHODS);
 
     if (!route) {
-      return;
+      return response.json({ message: "Not Found", error: 404 });
     }
 
     const { handlers, params } = route;

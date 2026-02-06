@@ -1,5 +1,5 @@
-import { Request } from "./request";
-import { Response } from "./response";
+import { Request } from "../core/request";
+import { Response } from "../core/response";
 
 type RouteHandler = (
   req: Request,
