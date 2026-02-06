@@ -16,6 +16,8 @@ interface Router {
   use(path: string, router: Router): void;
 
   route(path: string, router: Router);
+
+  collectRoutes(router: Router, basePath?: string): RouteDefinition[];
 }
 
 interface Routes {
