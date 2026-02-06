@@ -5,7 +5,7 @@ import { RouteDefinition, Router } from "../types/router";
 
 interface Layer {
   prefix: string;
-  routes: RouteDefinition[];
+  router: PipeRouter;
 }
 
 class RouterBuilder {
@@ -87,12 +87,9 @@ export class PipeRouter implements Router {
   }
 
   public use(prefix: string, router: PipeRouter): void {
-    if (router === this) {
-      throw new Error("Cannot use the same router as a sub-router.");
-    }
-
-    this.layers.push({ prefix, routes: router.routes });
+    this.layers.push({ prefix, router });
   }
+
   public route(path: string) {
     return new RouterBuilder(path, this);
   }
@@ -101,21 +98,21 @@ export class PipeRouter implements Router {
     this.routes.push(route);
   }
 
-  public collectRoutes(router: PipeRouter) {
-    const { routes, layers } = router;
+  public collectRoutes(router: PipeRouter, basePath: string = "") {
+    const { layers, routes } = router;
+    const collectedRoutes: RouteDefinition[] = [];
 
-    const collectedRoutes: RouteDefinition[] = [...routes];
+    for (const route of routes) {
+      collectedRoutes.push({
+        ...route,
+        path: `${basePath}${route.path}`,
+      });
+    }
 
     for (const layer of layers) {
-      const prefix = layer.prefix;
-      const subRoutes = layer.routes;
-
-      for (const subRoute of subRoutes) {
-        collectedRoutes.push({
-          ...subRoute,
-          path: `${prefix}${subRoute.path}`,
-        });
-      }
+      collectedRoutes.push(
+        ...this.collectRoutes(layer.router, `${basePath}${layer.prefix}`),
+      );
     }
 
     return collectedRoutes;
