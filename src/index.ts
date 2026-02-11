@@ -17,8 +17,10 @@ userRouter.get("/users/:id", (req: Request, res: Response) => {
 
 const app = new PipeServer();
 
-app.use("/api", userRouter);
+app.use("/api", userRouter); // route mounting
 
 app.listen(3001, () => {
   console.log("server is running on port 3000");
 });
+
+app.use("/some", (req: Request, res: Response) => {});
