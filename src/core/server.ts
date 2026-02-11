@@ -39,15 +39,41 @@ export class PipeServer {
     const route = this.routes.match(url, method.toLowerCase() as HTTP_METHODS);
 
     if (!route) {
-      return response.json({ message: "Not Found", error: 404 });
+      return response.status(404).json({ error: "Not Found", status: 404 });
     }
 
-    const { handlers, params } = route;
+    let { handlers, params } = route;
     request.params = params;
 
-    for (const handler of handlers) {
-      handler(request, response);
-    }
+    this.executeMiddlewareChain(request, response, [
+      ...this.middlewares,
+      ...handlers,
+    ]);
+  }
+
+  public executeMiddlewareChain(
+    req: Request,
+    res: Response,
+    handlers: RouteHandler[] | Middleware[],
+  ) {
+    console.log(handlers);
+    let start = 0;
+    const next = () => {
+      if (res.raw.writableEnded) return;
+
+      const result = handlers[start++](req, res, next);
+
+      if (result instanceof Promise) {
+        result.catch((error: unknown) => {
+          console.log(`[error]:`, error);
+          return res
+            .status(500)
+            .json({ error: "Internal server error", status: 500 });
+        });
+      }
+    };
+
+    next();
   }
 
   public use(arg1: string | Middleware, arg2?: PipeRouter | Middleware) {
@@ -61,7 +87,6 @@ export class PipeServer {
       // need to implement this next
     }
 
-    // this is route mounting , not middleware
     if (typeof arg1 === "string" && arg2 instanceof PipeRouter) {
       const path = arg1;
       const router = arg2;
