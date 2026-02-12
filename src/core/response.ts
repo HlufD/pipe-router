@@ -70,5 +70,7 @@ export class Response {
 
   public charset() {}
 
-  public getHeaderNames() {}
+  public getHeaderNames(): string[] {
+    return this.raw.getHeaderNames();
+  }
 }
