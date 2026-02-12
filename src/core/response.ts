@@ -28,7 +28,7 @@ export class Response {
 
   public set(field: string, value: string): this;
   public set(headers: Record<string, string>): this;
-  public set(filed: string | Record<string, string>, value?: string) {
+  public set(filed: string | Record<string, string>, value?: string): this {
     if (typeof filed === "string") {
       if (value == undefined)
         throw new Error("Value is required when field is a string");
@@ -42,8 +42,8 @@ export class Response {
     return this;
   }
 
-  public get() {
-    return this;
+  public get(field: string): string | number | string[] | undefined {
+    return this.raw.getHeader(field);
   }
 
   public type() {}
