@@ -6,17 +6,53 @@ export class Response {
     this.raw = raw;
   }
 
-  status(code: number) {
+  public status(code: number) {
     this.raw.statusCode = code;
     return this;
   }
 
-  json(data: Record<string, any>) {
+  public end(text: string) {
+    this.raw.end(text);
+  }
+
+  public json(data: Record<string, any>) {
     this.raw.setHeader("Content-Type", "application/json");
     this.end(JSON.stringify(data));
   }
 
-  end(text: string) {
-    this.raw.end(text);
-  }
+  public send() {}
+
+  public jsonp() {}
+
+  public sendStatus() {}
+
+  public set() {}
+
+  public get() {}
+
+  public type() {}
+
+  public location() {}
+
+  public links() {}
+
+  public vary() {}
+
+  public append() {}
+
+  public cookie() {}
+
+  public clearCookie() {}
+
+  public redirect() {}
+
+  public format() {}
+
+  public attachment() {}
+
+  public download() {}
+
+  public charset() {}
+
+  public getHeaderNames() {}
 }
