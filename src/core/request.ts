@@ -15,5 +15,6 @@ export class Request {
     this.url = raw.url || "/";
     this.path = this.url.split("?")[0];
     this.method = raw.method as HTTP_METHODS;
+    this.headers = raw.headers;
   }
 }
