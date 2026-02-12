@@ -26,9 +26,25 @@ export class Response {
 
   public sendStatus() {}
 
-  public set() {}
+  public set(field: string, value: string): this;
+  public set(headers: Record<string, string>): this;
+  public set(filed: string | Record<string, string>, value?: string) {
+    if (typeof filed === "string") {
+      if (value == undefined)
+        throw new Error("Value is required when field is a string");
 
-  public get() {}
+      this.raw.setHeader(filed, value);
+    } else {
+      for (const key in filed) {
+        this.raw.setHeader(key, filed[key]);
+      }
+    }
+    return this;
+  }
+
+  public get() {
+    return this;
+  }
 
   public type() {}
 
