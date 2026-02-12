@@ -11,7 +11,7 @@ export class Response {
     return this;
   }
 
-  json<T>(data: T) {
+  json(data: Record<string, any>) {
     this.raw.setHeader("Content-Type", "application/json");
     this.end(JSON.stringify(data));
   }
