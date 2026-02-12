@@ -17,4 +17,8 @@ export class Request {
     this.method = raw.method as HTTP_METHODS;
     this.headers = raw.headers;
   }
+
+  public get(header: string): string | string[] | undefined {
+    return this.headers[header.toLowerCase()];
+  }
 }
