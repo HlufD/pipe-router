@@ -3,6 +3,7 @@ import { Response } from "./core/response";
 import { PipeRouter } from "./core/router";
 import { PipeServer } from "./core/server";
 import { NextFunction } from "./types/middleware";
+const port = 3000;
 
 export { PipeServer } from "./core/server";
 
@@ -37,6 +38,6 @@ app.use("/some", (req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-app.listen(3001, () => {
-  console.log("server is running on port 3001");
+app.listen(port, () => {
+  console.log(`server is running on port ${port}`);
 });
