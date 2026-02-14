@@ -1,8 +1,8 @@
-import { Request } from "./core/request";
-import { Response } from "./core/response";
 import { PipeRouter } from "./core/router";
 import { PipeServer } from "./core/server";
 import { NextFunction } from "./types/next-function";
+import { Request } from "./types/request";
+import { Response } from "./types/response";
 
 const port = 3000;
 

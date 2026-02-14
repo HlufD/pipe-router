@@ -3,10 +3,10 @@ import { HTTP_METHODS } from "../enums/methods.enum";
 import { RouteHandler } from "../types/route-handler";
 import { RouteNode } from "../utils/Trie-Route";
 import { PipeRouter } from "./router";
-import { Request } from "./request";
-import { Response } from "./response";
 import { NextFunction } from "../types/next-function";
 import { Middleware } from "../types/middleware";
+import { Request } from "../types/request";
+import { Response } from "../types/response";
 
 export class PipeServer {
   routes: RouteNode;
@@ -23,20 +23,16 @@ export class PipeServer {
 
   public listen(port: number, callback?: () => void) {
     const server = createServer((req: IncomingMessage, res: ServerResponse) => {
-      this.handleRequest(req, res);
+      const request = this.decorateRequest(req as Request);
+      const response = this.decorateResponse(res as Response);
+      this.handleRequest(request, response);
     });
     server.listen(port, callback);
   }
 
-  private handleRequest(
-    rawRequest: IncomingMessage,
-    rawResponse: ServerResponse,
-  ) {
-    const request = new Request(rawRequest);
-    const response = new Response(rawResponse);
-
-    const method = request.method;
-    const url = request.url;
+  private handleRequest(request: Request, response: Response) {
+    const method = request.method || HTTP_METHODS.HEAD;
+    const url = request.url || "/";
     const route = this.routes.match(url, method.toLowerCase() as HTTP_METHODS);
 
     if (!route) {
@@ -59,7 +55,7 @@ export class PipeServer {
   ) {
     let start = 0;
     const next = () => {
-      if (res.raw.writableEnded) return;
+      if (res.writableEnded) return;
 
       const result = handlers[start++](req, res, next);
 
@@ -88,7 +84,7 @@ export class PipeServer {
 
       this.pypeMiddlewares.push(
         (req: Request, res: Response, next: NextFunction) => {
-          if (req.url.startsWith(path)) return handler(req, res, next);
+          if (req.url!.startsWith(path)) return handler(req, res, next);
           else next();
         },
       );
@@ -139,5 +135,56 @@ export class PipeServer {
       handlers = [handlers];
     }
     return handlers;
+  }
+
+  private decorateRequest(req: Request) {
+    req.params = {};
+    req.query = {};
+
+    req.get = function (header: string): string | string[] | undefined {
+      return this.headers[header.toLowerCase()];
+    };
+
+    return req;
+  }
+
+  private decorateResponse(res: Response) {
+    res.status = function (code: number) {
+      res.statusCode = code;
+      return this;
+    };
+
+    res.json = function (data: Record<string, any>) {
+      this.setHeader("Content-Type", "application/json");
+      this.end(JSON.stringify(data));
+    };
+
+    res.getHeader = function (): string[] {
+      return this.getHeaderNames();
+    };
+
+    res.get = function (field: string): string | number | string[] | undefined {
+      return this.getHeader(field);
+    };
+
+    res.set = function (
+      filed: string | Record<string, string>,
+      value?: string,
+    ) {
+      if (typeof filed === "string") {
+        if (value == undefined)
+          throw new Error("Value is required when field is a string");
+
+        res.setHeader(filed, value);
+      } else {
+        for (const key in filed) {
+          res.setHeader(key, filed[key]);
+        }
+      }
+
+      return this;
+    };
+
+    return res;
   }
 }
