@@ -4,5 +4,5 @@ import { Response } from "../core/response";
 type RouteHandler = (
   req: Request,
   res: Response,
-  next?: () => any,
+  next?: NextFunction,
 ) => void | Promise<void> | any;
