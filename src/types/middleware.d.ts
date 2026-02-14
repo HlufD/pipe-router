@@ -1,6 +1,6 @@
-import { Request } from "../core/request";
-import { Response } from "../core/response";
 import { NextFunction } from "./next-function";
+import { Request } from "./request";
+import { Response } from "./response";
 
 type Middleware = (
   req: Request,
