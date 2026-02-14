@@ -5,11 +5,12 @@ import { RouteNode } from "../utils/Trie-Route";
 import { PipeRouter } from "./router";
 import { Request } from "./request";
 import { Response } from "./response";
-import { Middleware, NextFunction } from "../types/middleware";
+import { NextFunction } from "../types/next-function";
+import { Middleware } from "../types/middleware";
 
 export class PipeServer {
   routes: RouteNode;
-  middlewares: Middleware[];
+  pypeMiddlewares: Middleware[];
 
   constructor() {
     this.routes = new RouteNode({
@@ -17,7 +18,7 @@ export class PipeServer {
       ignoreTrailingSlash: true,
     });
 
-    this.middlewares = [];
+    this.pypeMiddlewares = [];
   }
 
   public listen(port: number, callback?: () => void) {
@@ -46,7 +47,7 @@ export class PipeServer {
     request.params = params;
 
     this.executeMiddlewareChain(request, response, [
-      ...this.middlewares,
+      ...this.pypeMiddlewares,
       ...handlers,
     ]);
   }
@@ -77,7 +78,7 @@ export class PipeServer {
 
   public use(arg1: string | Middleware, arg2?: PipeRouter | Middleware) {
     if (typeof arg1 === "function") {
-      this.middlewares.push(arg1);
+      this.pypeMiddlewares.push(arg1);
       return;
     }
 
@@ -85,7 +86,7 @@ export class PipeServer {
       const path = arg1;
       const handler = arg2;
 
-      this.middlewares.push(
+      this.pypeMiddlewares.push(
         (req: Request, res: Response, next: NextFunction) => {
           if (req.url.startsWith(path)) return handler(req, res, next);
           else next();
