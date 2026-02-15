@@ -154,14 +154,46 @@ export class PypeServer {
       return this;
     };
 
-    res.send = function () {};
+    res.send = function (body?: any) {
+      if (this.writableEnded) return this;
+
+      if (typeof body === "number") {
+        this.statusCode = body;
+        body = `${body}`;
+        if (!this.getHeader("Content-Type")) {
+          this.setHeader("Content-Type", "text/plain; charset=utf-8");
+        }
+      } else if (typeof body === "object" && body !== null) {
+        if (!this.getHeader("Content-Type")) {
+          this.setHeader("Content-Type", "application/json; charset=utf-8");
+        }
+        body = JSON.stringify(body);
+      } else if (typeof body === "string") {
+        if (!this.getHeader("Content-Type")) {
+          this.setHeader("Content-Type", "text/html; charset=utf-8");
+        }
+      } else if (Buffer.isBuffer(body)) {
+        if (!this.getHeader("Content-Type")) {
+          this.setHeader("Content-Type", "application/octet-stream");
+        }
+      }
+
+      if (!this.getHeader("Content-Length") && body != null) {
+        const length =
+          typeof body === "string"
+            ? Buffer.byteLength(body)
+            : Buffer.isBuffer(body)
+              ? body.length
+              : 0;
+        if (length > 0) this.setHeader("Content-Length", length.toString());
+      }
+
+      this.end(body);
+      return this;
+    };
 
     res.json = function (data: Record<string, any>) {
-      if (this.getHeader("Content-Type"))
-        this.setHeader("Content-Type", "application/json; charset=utf-8");
-
-      if (!this.writableEnded) this.end(JSON.stringify(data));
-
+      this.send(data);
       return this;
     };
 
