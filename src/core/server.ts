@@ -150,17 +150,19 @@ export class PypeServer {
 
   private decorateResponse(res: Response) {
     res.status = function (code: number) {
-      res.statusCode = code;
+      this.statusCode = code;
       return this;
     };
 
-    res.json = function (data: Record<string, any>) {
-      this.setHeader("Content-Type", "application/json");
-      this.end(JSON.stringify(data));
-    };
+    res.send = function () {};
 
-    res.getHeaderNames = function (): string[] {
-      return this.getHeaderNames();
+    res.json = function (data: Record<string, any>) {
+      if (this.getHeader("Content-Type"))
+        this.setHeader("Content-Type", "application/json; charset=utf-8");
+
+      if (!this.writableEnded) this.end(JSON.stringify(data));
+
+      return this;
     };
 
     res.get = function (field: string): string | number | string[] | undefined {
@@ -175,10 +177,10 @@ export class PypeServer {
         if (value == undefined)
           throw new Error("Value is required when field is a string");
 
-        res.setHeader(filed, value);
+        this.setHeader(filed, value);
       } else {
         for (const key in filed) {
-          res.setHeader(key, filed[key]);
+          this.setHeader(key, filed[key]);
         }
       }
 
