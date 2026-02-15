@@ -159,7 +159,7 @@ export class PypeServer {
       this.end(JSON.stringify(data));
     };
 
-    res.getHeader = function (): string[] {
+    res.getHeaderNames = function (): string[] {
       return this.getHeaderNames();
     };
 
