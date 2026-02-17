@@ -16,7 +16,7 @@ export interface Response extends ServerResponse {
 
   get(field: string): string | number | string[] | undefined;
 
-  type(...args: any[]): void;
+  type(value: string): this;
 
   location(...args: any[]): void;
 
