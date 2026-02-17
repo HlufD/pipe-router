@@ -261,6 +261,10 @@ export class Pype {
       return this;
     };
 
+    res.redirect = function () {
+      return this;
+    };
+
     return res;
   }
 }

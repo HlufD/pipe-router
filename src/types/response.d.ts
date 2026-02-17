@@ -30,7 +30,7 @@ export interface Response extends ServerResponse {
 
   clearCookie(...args: any[]): void;
 
-  redirect(...args: any[]): void;
+  redirect(...args: any[]): this;
 
   format(...args: any[]): void;
 
