@@ -209,10 +209,10 @@ export class Pype {
     };
 
     res.json = function (data: Record<string, any>) {
-      if (!this.getHeader("Content-Type")) {
+      if (!this.getHeader("Content-Type"))
         this.setHeader("Content-Type", "application/json; charset=utf-8");
-      }
-      this.send(JSON.stringify(data));
+
+      this.send(data);
       return this;
     };
 
