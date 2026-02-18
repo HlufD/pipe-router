@@ -18,7 +18,7 @@ export interface Response extends ServerResponse {
 
   type(value: string): this;
 
-  location(...args: any[]): void;
+  location(location: string): this;
 
   links(...args: any[]): void;
 
