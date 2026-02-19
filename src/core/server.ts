@@ -275,6 +275,10 @@ export class Pype {
       return this;
     };
 
+    res.links = function () {
+      return this;
+    };
+
     return res;
   }
 }
