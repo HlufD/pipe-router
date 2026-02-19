@@ -20,7 +20,7 @@ export interface Response extends ServerResponse {
 
   location(location: string): this;
 
-  links(...args: any[]): void;
+  links(links: Record<string, string>): void;
 
   vary(...args: any[]): void;
 

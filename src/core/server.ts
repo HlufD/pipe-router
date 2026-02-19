@@ -275,7 +275,30 @@ export class Pype {
       return this;
     };
 
-    res.links = function () {
+    res.links = function (links: Record<string, string>) {
+      if (!links || typeof links !== "object") {
+        return this;
+      }
+
+      const existing = this.getHeader("Link");
+      const linkValues: string[] = [];
+
+      for (const rel in links) {
+        const url = links[rel];
+
+        if (typeof url !== "string") continue;
+
+        linkValues.push(`<${url}>; rel="${rel}"`);
+      }
+
+      const newValue = linkValues.join(", ");
+
+      if (existing) {
+        this.setHeader("Link", `${existing}, ${newValue}`);
+      } else {
+        this.setHeader("Link", newValue);
+      }
+
       return this;
     };
 
