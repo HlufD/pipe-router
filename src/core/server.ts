@@ -302,6 +302,11 @@ export class Pype {
       return this;
     };
 
+    res.location = function (location: string) {
+      this.set("Location", location);
+      return this;
+    };
+
     return res;
   }
 }
