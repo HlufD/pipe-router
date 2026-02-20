@@ -26,9 +26,9 @@ export interface Response extends ServerResponse {
 
   append(...args: any[]): void;
 
-  cookie(...args: any[]): void;
+  cookie(...args: any[]): this;
 
-  clearCookie(...args: any[]): void;
+  clearCookie(...args: any[]): this;
 
   redirect(...args: any[]): this;
 
