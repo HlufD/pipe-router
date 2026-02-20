@@ -13,6 +13,7 @@ import { Middleware } from "../types/middleware";
 import { Request } from "../types/request";
 import { Response } from "../types/response";
 import { MIME_TYPES } from "../enums/mime-types";
+import { serializeCookie } from "../utils/helpers";
 
 export class Pype {
   routes: RouteNode;
@@ -307,12 +308,36 @@ export class Pype {
       return this;
     };
 
-    res.cookie = function () {
+    res.cookie = function (
+      name: string,
+      value: any,
+      options: CookieOptions = {},
+    ) {
+      const val =
+        typeof value === "object" ? JSON.stringify(value) : String(value);
+
+      const serialized = serializeCookie(name, val, options);
+
+      const prev = this.getHeader("Set-Cookie");
+
+      if (!prev) {
+        this.setHeader("Set-Cookie", serialized);
+      } else if (Array.isArray(prev)) {
+        this.setHeader("Set-Cookie", [...prev, serialized]);
+      } else {
+        this.setHeader("Set-Cookie", [prev as string, serialized]);
+      }
+
       return this;
     };
 
-    res.clearCookie = function () {
-      return this;
+    res.clearCookie = function (name: string, options: CookieOptions = {}) {
+      const opts = { ...options };
+
+      opts.expires = new Date(1);
+      opts.maxAge = undefined;
+
+      return this.cookie(name, "", opts);
     };
 
     return res;
